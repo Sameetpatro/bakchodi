@@ -15,6 +15,7 @@ class GameView @JvmOverloads constructor(
 
     // Public callback to notify score
     var onScoreChange: ((Int) -> Unit)? = null
+    var onGameOver: ((Int) -> Unit)? = null  // Callback for game over with final score
 
     private var thread: Thread? = null
     @Volatile private var running = false
@@ -28,7 +29,7 @@ class GameView @JvmOverloads constructor(
     private var canvasHeight = 0
 
     // grid size (cell px)
-    private var cellSize = 80  // Increased to 80 for much bigger snake and food
+    private var cellSize = 100  // Increased to 100 for even bigger snake and food
     private var cols = 0
     private var rows = 0
 
@@ -90,8 +91,8 @@ class GameView @JvmOverloads constructor(
         canvasHeight = height
 
         if (canvasWidth > 0 && canvasHeight > 0 && !initialized) {
-            // Calculate grid with much larger cell size
-            cellSize = (canvasWidth / 10).coerceAtLeast(70)  // Even bigger cells
+            // Calculate grid with very large cell size
+            cellSize = (canvasWidth / 8).coerceAtLeast(90)  // Very big cells
             cols = canvasWidth / cellSize
             rows = (canvasHeight - 200) / cellSize
 
@@ -113,7 +114,7 @@ class GameView @JvmOverloads constructor(
         canvasHeight = height
 
         if (!initialized && canvasWidth > 0 && canvasHeight > 0) {
-            cellSize = (canvasWidth / 10).coerceAtLeast(70)  // Even bigger cells
+            cellSize = (canvasWidth / 8).coerceAtLeast(90)  // Very big cells
             cols = canvasWidth / cellSize
             rows = (canvasHeight - 200) / cellSize
 
@@ -225,7 +226,8 @@ class GameView @JvmOverloads constructor(
         // collision with self -> game over (restart)
         if (snake.any { it.x == newHead.x && it.y == newHead.y }) {
             Log.d("GameView", "Game Over - Self collision!")
-            initGame()
+            pauseGame()
+            onGameOver?.invoke(score)  // Notify activity of game over
             return
         }
 
@@ -371,6 +373,11 @@ class GameView @JvmOverloads constructor(
     }
 
     fun isPaused() = paused
+
+    // Reset game for play again
+    fun resetGame() {
+        initGame()
+    }
 
     // Touch handling - simple swipe detection
     override fun onTouchEvent(event: MotionEvent): Boolean {

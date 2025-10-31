@@ -1,14 +1,13 @@
 package com.example.shhhhhhmita
 
+import android.app.Dialog
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.view.Window
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.shhhhhhmita.R
-import com.example.shhhhhhmita.Direction
-import com.example.shhhhhhmita.GameView
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,14 +57,46 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Game over listener
+        gameView.onGameOver = { finalScore ->
+            runOnUiThread {
+                showGameOverDialog(finalScore)
+            }
+        }
+
         // Play background music
         initMusic()
     }
 
+    private fun showGameOverDialog(finalScore: Int) {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_game_over)
+        dialog.setCancelable(false)
+
+        val finalScoreText = dialog.findViewById<TextView>(R.id.finalScoreText)
+        val playAgainButton = dialog.findViewById<Button>(R.id.playAgainButton)
+
+        finalScoreText.text = "Score: $finalScore"
+
+        playAgainButton.setOnClickListener {
+            dialog.dismiss()
+            gameView.resetGame()
+            gameView.resumeGame()
+            pauseBtn.text = "Pause"
+            playMusic()
+        }
+
+        pauseMusic()
+        dialog.show()
+    }
+
     override fun onResume() {
         super.onResume()
-        gameView.resumeGame()
-        playMusic()
+        if (!gameView.isPaused()) {
+            gameView.resumeGame()
+            playMusic()
+        }
     }
 
     override fun onPause() {
@@ -81,8 +112,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initMusic() {
-        // Put your music file in res/raw/background_music.mp3
-        // If you changed the name, update R.raw.background_music
+        // Put your music file in res/raw/bg_music_snake_game.mp3
         try {
             mediaPlayer = MediaPlayer.create(this, R.raw.bg_music_snake_game)
             mediaPlayer?.isLooping = true
