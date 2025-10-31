@@ -17,7 +17,7 @@
         android:orientation="horizontal"
         android:padding="12dp"
         android:gravity="center_vertical"
-        android:background="@android:color/transparent">
+        android:background="#40000000">
 
         <TextView
             android:id="@+id/scoreText"
@@ -25,55 +25,74 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Score: 0"
-            android:textSize="18sp" />
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/pauseBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pause" />
+            android:text="Pause"
+            android:textSize="16sp" />
     </LinearLayout>
 
-    <!-- Direction controls at bottom-right (simple) -->
-    <LinearLayout
+    <!-- Direction controls centered at bottom -->
+    <RelativeLayout
         android:id="@+id/controlPad"
-        android:orientation="vertical"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="32dp"
+        android:layout_width="220dp"
+        android:layout_height="220dp">
 
+        <!-- Up button - centered top -->
         <ImageButton
             android:id="@+id/btnUp"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:src="@android:drawable/arrow_up_float"
-            android:background="@android:color/transparent"/>
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/arrow_up"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:padding="8dp"/>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <ImageButton
-                android:id="@+id/btnLeft"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/arrow_left"
-                android:background="@android:color/transparent" />
-
-            <ImageButton
-                android:id="@+id/btnRight"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/arrow_right"
-                android:background="@android:color/transparent" />
-        </LinearLayout>
-
+        <!-- Down button - centered bottom -->
         <ImageButton
             android:id="@+id/btnDown"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:src="@android:drawable/arrow_down_float"
-            android:background="@android:color/transparent"/>
-    </LinearLayout>
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/arrow_down"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:padding="8dp"/>
+
+        <!-- Left button - middle left -->
+        <ImageButton
+            android:id="@+id/btnLeft"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/arrow_left"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:padding="8dp"/>
+
+        <!-- Right button - middle right -->
+        <ImageButton
+            android:id="@+id/btnRight"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/arrow_right"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:padding="8dp"/>
+
+    </RelativeLayout>
 
 </FrameLayout>

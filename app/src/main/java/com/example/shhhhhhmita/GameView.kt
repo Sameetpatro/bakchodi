@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import com.example.shhhhhhmita.R
 import kotlin.random.Random
 
 class GameView @JvmOverloads constructor(
@@ -29,7 +28,7 @@ class GameView @JvmOverloads constructor(
     private var canvasHeight = 0
 
     // grid size (cell px)
-    private var cellSize = 48
+    private var cellSize = 80  // Increased to 80 for much bigger snake and food
     private var cols = 0
     private var rows = 0
 
@@ -44,58 +43,89 @@ class GameView @JvmOverloads constructor(
     private var headBitmap: Bitmap? = null
     private var bodyBitmap: Bitmap? = null
     private var foodBitmap: Bitmap? = null
-    private var bgBitmap: Bitmap? = null
 
     // For swipe detection
     private var touchStartX = 0f
     private var touchStartY = 0f
     private val SWIPE_THRESHOLD = 60
 
+    private var initialized = false
+
     init {
         holder.addCallback(this)
         isFocusable = true
-        // load default images from drawable (user can replace files)
+        // load default images from drawable
         loadResources()
     }
 
     private fun loadResources() {
         try {
-            // Replace these resource names with your files in res/drawable
             headBitmap = BitmapFactory.decodeResource(resources, R.drawable.snake_face)
+            Log.d("GameView", "Head bitmap loaded")
         } catch (e: Exception) {
+            Log.e("GameView", "Failed to load head bitmap", e)
             headBitmap = null
         }
 
         try {
-            foodBitmap = BitmapFactory.decodeResource(resources, R.drawable.food)
+            bodyBitmap = BitmapFactory.decodeResource(resources, R.drawable.snake_body)
+            Log.d("GameView", "Body bitmap loaded")
         } catch (e: Exception) {
+            Log.e("GameView", "Failed to load body bitmap", e)
+            bodyBitmap = null
+        }
+
+        try {
+            foodBitmap = BitmapFactory.decodeResource(resources, R.drawable.food)
+            Log.d("GameView", "Food bitmap loaded")
+        } catch (e: Exception) {
+            Log.e("GameView", "Failed to load food bitmap", e)
             foodBitmap = null
         }
-        bodyBitmap = null
-        bgBitmap = null
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        // compute how many cells fit horizontally and vertically
-        cellSize = 50 // or whatever your cell size is
-        cols = width / cellSize
-        rows = height / cellSize
-        Log.d("GameView", "width=$width height=$height cellSize=$cellSize")
-        Log.d("GameView", "cols=$cols rows=$rows")
+        Log.d("GameView", "surfaceCreated called")
+        canvasWidth = width
+        canvasHeight = height
 
-        initGame() // <-- only start the game now
+        if (canvasWidth > 0 && canvasHeight > 0 && !initialized) {
+            // Calculate grid with much larger cell size
+            cellSize = (canvasWidth / 10).coerceAtLeast(70)  // Even bigger cells
+            cols = canvasWidth / cellSize
+            rows = (canvasHeight - 200) / cellSize
+
+            Log.d("GameView", "Canvas: ${canvasWidth}x${canvasHeight}, Cell: $cellSize, Grid: ${cols}x${rows}")
+
+            initGame()
+            initialized = true
+        }
+
+        // Start the game thread
+        running = true
+        thread = Thread(this)
         thread?.start()
+        Log.d("GameView", "Game thread started")
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         canvasWidth = width
         canvasHeight = height
-        // compute grid based on cellSize
-        cols = canvasWidth / cellSize
-        rows = (canvasHeight - 200) / cellSize // leave space maybe for UI
+
+        if (!initialized && canvasWidth > 0 && canvasHeight > 0) {
+            cellSize = (canvasWidth / 10).coerceAtLeast(70)  // Even bigger cells
+            cols = canvasWidth / cellSize
+            rows = (canvasHeight - 200) / cellSize
+
+            Log.d("GameView", "surfaceChanged - Canvas: ${canvasWidth}x${canvasHeight}, Grid: ${cols}x${rows}")
+
+            initGame()
+            initialized = true
+        }
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
+        Log.d("GameView", "surfaceDestroyed called")
         running = false
         try {
             thread?.join()
@@ -105,50 +135,70 @@ class GameView @JvmOverloads constructor(
     }
 
     private fun initGame() {
-        // adjust cell size to screen width if necessary
-        cellSize = (resources.displayMetrics.widthPixels / 20).coerceAtLeast(24)
-        cols = canvasWidth / cellSize
-        rows = (canvasHeight / cellSize).coerceAtLeast(10)
+        if (cols <= 0 || rows <= 0) {
+            Log.w("GameView", "Cannot init game, invalid grid size: ${cols}x${rows}")
+            return
+        }
+
         snake.clear()
-        val startX = (cols / 2)
-        val startY = (rows / 2)
+        val startX = (cols / 2).coerceAtLeast(3)
+        val startY = (rows / 2).coerceAtLeast(1)
+
         snake.add(Point(startX, startY))
         snake.add(Point(startX - 1, startY))
         snake.add(Point(startX - 2, startY))
+
         direction = Direction.RIGHT
         nextDirection = Direction.RIGHT
         spawnApple()
         score = 0
         onScoreChange?.invoke(score)
+        speedMs = 150L
+
+        Log.d("GameView", "Game initialized - Snake at ($startX, $startY), Apple at (${apple.x}, ${apple.y})")
     }
 
     private fun spawnApple() {
-        if (cols <= 0 || rows <= 0) return  // prevent crash if called too early
+        if (cols <= 0 || rows <= 0) return
 
         val rnd = Random(System.currentTimeMillis())
+        var attempts = 0
         var p: Point
+
         do {
             p = Point(rnd.nextInt(cols), rnd.nextInt(rows))
-        } while (snake.any { it.x == p.x && it.y == p.y })
-        apple = p
-    }
+            attempts++
+        } while (snake.any { it.x == p.x && it.y == p.y } && attempts < 100)
 
+        apple = p
+        Log.d("GameView", "Apple spawned at (${apple.x}, ${apple.y})")
+    }
 
     override fun run() {
         var lastMove = System.currentTimeMillis()
+        Log.d("GameView", "Game loop started")
+
         while (running) {
-            if (!holder.surface.isValid) continue
+            if (!holder.surface.isValid) {
+                try {
+                    Thread.sleep(16)
+                } catch (e: InterruptedException) {}
+                continue
+            }
+
             val now = System.currentTimeMillis()
             if (!paused && now - lastMove >= speedMs) {
                 update()
                 lastMove = now
             }
             draw()
+
             // small sleep to avoid busy loop and reduce CPU
             try {
                 Thread.sleep(16)
             } catch (e: InterruptedException) {}
         }
+        Log.d("GameView", "Game loop ended")
     }
 
     private fun update() {
@@ -156,6 +206,7 @@ class GameView @JvmOverloads constructor(
         if (!isOpposite(nextDirection, direction)) {
             direction = nextDirection
         }
+
         // compute new head pos
         val head = snake[0]
         val newHead = when (direction) {
@@ -165,7 +216,7 @@ class GameView @JvmOverloads constructor(
             Direction.RIGHT -> Point(head.x + 1, head.y)
         }
 
-        // wrap-around OR detect wall collision — choose wrap around:
+        // wrap-around
         if (newHead.x < 0) newHead.x = cols - 1
         if (newHead.x >= cols) newHead.x = 0
         if (newHead.y < 0) newHead.y = rows - 1
@@ -173,7 +224,7 @@ class GameView @JvmOverloads constructor(
 
         // collision with self -> game over (restart)
         if (snake.any { it.x == newHead.x && it.y == newHead.y }) {
-            // Game Over: reset
+            Log.d("GameView", "Game Over - Self collision!")
             initGame()
             return
         }
@@ -187,6 +238,7 @@ class GameView @JvmOverloads constructor(
             spawnApple()
             // speed up slightly
             if (speedMs > 50) speedMs -= 3
+            Log.d("GameView", "Apple eaten! Score: $score")
         } else {
             // remove tail
             snake.removeAt(snake.size - 1)
@@ -205,16 +257,18 @@ class GameView @JvmOverloads constructor(
         try {
             canvas = holder.lockCanvas()
             if (canvas == null) return
-            canvas.drawColor(Color.BLACK)
-            // draw background if present
-            bgBitmap?.let {
-                val src = Rect(0, 0, it.width, it.height)
-                val dst = Rect(0, 0, width, height)
-                canvas.drawBitmap(it, src, dst, null)
-            }
 
-            // translate grid origin a bit if top UI exists
-            val offsetY = 0
+            // Draw gradient background
+            val gradient = LinearGradient(
+                0f, 0f, 0f, canvas.height.toFloat(),
+                intArrayOf(0xFF1a237e.toInt(), 0xFF283593.toInt(), 0xFF3949ab.toInt()),
+                null,
+                Shader.TileMode.CLAMP
+            )
+            bgPaint.shader = gradient
+            canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), bgPaint)
+
+            val offsetY = 100 // offset for top UI
 
             // draw apple (food)
             val appleLeft = apple.x * cellSize
@@ -239,26 +293,40 @@ class GameView @JvmOverloads constructor(
                 val p = snake[i]
                 val left = p.x * cellSize
                 val top = p.y * cellSize + offsetY
+
                 if (i == 0) {
                     // head
                     headBitmap?.let {
-                        val body = Bitmap.createScaledBitmap(it, cellSize, cellSize, false)
-                        val rotated = rotateBitmapForDirection(body, direction)
+                        val scaled = Bitmap.createScaledBitmap(it, cellSize, cellSize, false)
+                        val rotated = rotateBitmapForDirection(scaled, direction)
                         canvas.drawBitmap(rotated, left.toFloat(), top.toFloat(), snakePaint)
                     } ?: run {
                         // fallback head rect
                         val paint = Paint()
-                        paint.color = Color.BLUE
-                        canvas.drawRect(left.toFloat(), top.toFloat(), (left + cellSize).toFloat(), (top + cellSize).toFloat(), paint)
+                        paint.color = 0xFF4CAF50.toInt()
+                        canvas.drawRect(
+                            left.toFloat(),
+                            top.toFloat(),
+                            (left + cellSize).toFloat(),
+                            (top + cellSize).toFloat(),
+                            paint
+                        )
                     }
                 } else {
+                    // body
                     bodyBitmap?.let {
                         val body = Bitmap.createScaledBitmap(it, cellSize, cellSize, false)
                         canvas.drawBitmap(body, left.toFloat(), top.toFloat(), snakePaint)
                     } ?: run {
                         val paint = Paint()
-                        paint.color = Color.GREEN
-                        canvas.drawRect(left.toFloat(), top.toFloat(), (left + cellSize).toFloat(), (top + cellSize).toFloat(), paint)
+                        paint.color = 0xFF66BB6A.toInt()
+                        canvas.drawRect(
+                            left.toFloat(),
+                            top.toFloat(),
+                            (left + cellSize).toFloat(),
+                            (top + cellSize).toFloat(),
+                            paint
+                        )
                     }
                 }
             }
@@ -285,16 +353,21 @@ class GameView @JvmOverloads constructor(
     // Expose direction change from activity
     fun setDirection(dir: Direction) {
         // prevent 180-degree turns
-        if (!isOpposite(dir, direction)) nextDirection = dir
+        if (!isOpposite(dir, direction)) {
+            nextDirection = dir
+            Log.d("GameView", "Direction changed to: $dir")
+        }
     }
 
     // Pause/resume API
     fun pauseGame() {
         paused = true
+        Log.d("GameView", "Game paused")
     }
 
     fun resumeGame() {
         paused = false
+        Log.d("GameView", "Game resumed")
     }
 
     fun isPaused() = paused

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Snake body segment with gradient effect -->
+    <path
+        android:fillColor="#66BB6A"
+        android:pathData="M4,8 Q4,4 8,4 L40,4 Q44,4 44,8 L44,40 Q44,44 40,44 L8,44 Q4,44 4,40 Z"/>
+
+    <!-- Scale pattern -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M12,12 Q24,16 36,12 Q32,24 36,36 Q24,32 12,36 Q16,24 12,12 Z"/>
+</vector>
