@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Game view (SurfaceView implemented in GameView) -->
+    <com.example.shhhhhhmita.GameView
+        android:id="@+id/gameView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Top bar: Score and Pause -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="@android:color/transparent">
+
+        <TextView
+            android:id="@+id/scoreText"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Score: 0"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/pauseBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pause" />
+    </LinearLayout>
+
+    <!-- Direction controls at bottom-right (simple) -->
+    <LinearLayout
+        android:id="@+id/controlPad"
+        android:orientation="vertical"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageButton
+            android:id="@+id/btnUp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@android:drawable/arrow_up_float"
+            android:background="@android:color/transparent"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnLeft"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/arrow_left"
+                android:background="@android:color/transparent" />
+
+            <ImageButton
+                android:id="@+id/btnRight"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/arrow_right"
+                android:background="@android:color/transparent" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnDown"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@android:drawable/arrow_down_float"
+            android:background="@android:color/transparent"/>
+    </LinearLayout>
+
+</FrameLayout>
